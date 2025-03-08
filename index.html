@@ -25,13 +25,36 @@
             transition: 0.2s;
         }
         #clickButton { background: #ff6f61; color: white; }
-        #clickButton:hover { transform: scale(1.1); }
         #upgradeButton { background: #4CAF50; color: white; }
         #workerButton { background: #007BFF; color: white; }
         #buyPhoto { background: #FFD700; color: black; }
         #score { font-size: 24px; margin-top: 10px; }
         #gallery { margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: center; }
-        #gallery img { width: 100px; height: 100px; margin: 5px; border-radius: 10px; border: 2px solid white; }
+        #gallery img {
+            width: 100px;
+            height: 100px;
+            margin: 5px;
+            border-radius: 10px;
+            border: 2px solid white;
+            cursor: pointer;
+        }
+        #fullscreenImage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            display: none;
+        }
+        #fullscreenImage img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
@@ -44,14 +67,18 @@
 
     <div id="gallery"></div>
 
+    <div id="fullscreenImage" onclick="closeFullscreen()">
+        <img id="fullImage" src="" alt="Фото">
+    </div>
+
     <script>
         let score = localStorage.getItem("score") ? parseInt(localStorage.getItem("score")) : 0;
         let clickPower = localStorage.getItem("clickPower") ? parseInt(localStorage.getItem("clickPower")) : 1;
         let workers = localStorage.getItem("workers") ? parseInt(localStorage.getItem("workers")) : 0;
         let photoUrls = [
-            "https://placekitten.com/100/100",
-            "https://placebear.com/100/100",
-            "https://picsum.photos/100"
+            "https://placekitten.com/300/300",
+            "https://placebear.com/300/300",
+            "https://picsum.photos/300"
         ];
         let savedPhotos = localStorage.getItem("photos") ? JSON.parse(localStorage.getItem("photos")) : [];
 
@@ -115,8 +142,18 @@
             savedPhotos.forEach(src => {
                 let img = document.createElement("img");
                 img.src = src;
+                img.onclick = () => openFullscreen(src);
                 gallery.appendChild(img);
             });
+        }
+
+        function openFullscreen(src) {
+            document.getElementById("fullImage").src = src;
+            document.getElementById("fullscreenImage").style.display = "flex";
+        }
+
+        function closeFullscreen() {
+            document.getElementById("fullscreenImage").style.display = "none";
         }
 
         function saveData() {
@@ -129,4 +166,4 @@
         updateGallery();
     </script>
 </body>
-  </html>
+</html>
