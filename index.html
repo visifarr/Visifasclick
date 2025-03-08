@@ -3,127 +3,175 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Кликер</title>
+    <title>Кликер с фото</title>
     <style>
         body {
             text-align: center;
             font-family: Arial, sans-serif;
-            background: linear-gradient(to right, #ff9a9e, #fad0c4);
-            height: 100vh;
+            background-color: #f5f5f5;
+        }
+        #gallery {
             display: flex;
-            flex-direction: column;
+            flex-wrap: wrap;
             justify-content: center;
-            align-items: center;
-        }
-        #clickButton, #upgradeButton, #workerButton, #buyPhoto {
-            font-size: 20px;
-            padding: 10px 20px;
             margin-top: 20px;
-            border: none;
-            cursor: pointer;
-            border-radius: 10px;
-            transition: 0.2s;
         }
-        #clickButton { background: #ff6f61; color: white; }
-        #upgradeButton { background: #4CAF50; color: white; }
-        #workerButton { background: #007BFF; color: white; }
-        #buyPhoto { background: #FFD700; color: black; }
-        #score { font-size: 24px; margin-top: 10px; }
-        #gallery { margin-top: 20px; display: flex; flex-wrap: wrap; justify-content: center; }
-        #gallery img {
-            width: 100px;
-            height: 100px;
-            margin: 5px;
-            border-radius: 10px;
-            border: 2px solid white;
+        .photo-container {
+            position: relative;
+            margin: 10px;
+        }
+        .photo-container img {
+            width: 150px;
+            height: 150px;
             cursor: pointer;
         }
-        #fullscreenImage {
+        .rarity-label {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 12px;
+            padding: 3px;
+            border-radius: 5px;
+        }
+        #fullscreen-container {
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.8);
-            display: flex;
             justify-content: center;
             align-items: center;
-            display: none;
         }
-        #fullscreenImage img {
+        #fullscreen-img {
             max-width: 90%;
             max-height: 90%;
-            border-radius: 10px;
         }
     </style>
 </head>
 <body>
-    <h1>Кликер</h1>
+
+    <h1>Кликер с фото</h1>
     <p id="score">Очки: 0</p>
-    <button id="clickButton">Клик!</button>
-    <button id="upgradeButton">Купить улучшение (50 очков)</button>
-    <button id="workerButton">Нанять работника (100 очков)</button>
-    <button id="buyPhoto">Купить фоточку (200 очков)</button>
+    <button id="clickButton">Кликнуть</button>
+    <button id="buyPhoto">Купить фото (200 очков)</button>
 
     <div id="gallery"></div>
 
-    <div id="fullscreenImage" onclick="closeFullscreen()">
-        <img id="fullImage" src="" alt="Фото">
+    <div id="fullscreen-container" onclick="closeFullscreen()">
+        <img id="fullscreen-img">
     </div>
 
     <script>
-        let score = localStorage.getItem("score") ? parseInt(localStorage.getItem("score")) : 0;
-        let clickPower = localStorage.getItem("clickPower") ? parseInt(localStorage.getItem("clickPower")) : 1;
-        let workers = localStorage.getItem("workers") ? parseInt(localStorage.getItem("workers")) : 0;
-        let photoUrls = [
-            "https://placekitten.com/300/300",
-            "https://placebear.com/300/300",
-            "https://picsum.photos/300"
-        ];
-        let savedPhotos = localStorage.getItem("photos") ? JSON.parse(localStorage.getItem("photos")) : [];
+        let score = 0;
+        let savedPhotos = [];
 
-        document.getElementById("score").textContent = "Очки: " + score;
+        const characters = [
+            // Легендарные (1%)
+            { src: "midorima.jpg", name: "Мидорима Шинтаро", rarity: "Легендарная", chance: 1 },
+            { src: "kise.jpg", name: "Кисе Рёта", rarity: "Легендарная", chance: 1 },
+            { src: "aomine.jpg", name: "Аомине Дайки", rarity: "Легендарная", chance: 1 },
+            { src: "kagami.jpg", name: "Кагами Тайга", rarity: "Легендарная", chance: 1 },
+            { src: "akashi.jpg", name: "Сейджуро Акаши", rarity: "Легендарная", chance: 1 },
+            { src: "kuroko.jpg", name: "Куроко Тецуя", rarity: "Легендарная", chance: 1 },
+            { src: "murasakibara.jpg", name: "Мурасакибара Ацуши", rarity: "Легендарная", chance: 1 },
+
+            // Элегантные (5%)
+            { src: "nash.jpg", name: "Нэш Голд", rarity: "Элегантная", chance: 5 },
+            { src: "jason.jpg", name: "Джейсон Сильвер", rarity: "Элегантная", chance: 5 },
+            { src: "haizaki.jpg", name: "Шого Хайзаки", rarity: "Элегантная", chance: 5 },
+            { src: "hanamiya.jpg", name: "Макото Ханамия", rarity: "Элегантная", chance: 5 },
+
+            // Переливчатые (10%)
+            { src: "team1.jpg", name: "Игрок 1 (Команда Мурасакибары)", rarity: "Переливчатая", chance: 10 },
+            { src: "team2.jpg", name: "Игрок 2 (Команда Мурасакибары)", rarity: "Переливчатая", chance: 10 },
+            { src: "team3.jpg", name: "Игрок 3 (Команда Мурасакибары)", rarity: "Переливчатая", chance: 10 },
+
+            // Мидартовые (15%)
+            { src: "midart1.jpg", name: "Мидартовый персонаж 1", rarity: "Мидартовая", chance: 15 },
+            { src: "midart2.jpg", name: "Мидартовый персонаж 2", rarity: "Мидартовая", chance: 15 },
+
+            // Редкие (20%)
+            { src: "rare1.jpg", name: "Редкий персонаж 1", rarity: "Редкая", chance: 20 },
+            { src: "rare2.jpg", name: "Редкий персонаж 2", rarity: "Редкая", chance: 20 },
+
+            // Обычные (43%)
+            { src: "common1.jpg", name: "Обычный персонаж 1", rarity: "Обычная", chance: 43 },
+            { src: "common2.jpg", name: "Обычный персонаж 2", rarity: "Обычная", chance: 43 }
+        ];
+
+        function getRandomCharacter() {
+            let rand = Math.random() * 100;
+            let cumulative = 0;
+            for (let char of characters) {
+                cumulative += char.chance;
+                if (rand < cumulative) return char;
+            }
+            return { src: "common.jpg", name: "Обычный персонаж", rarity: "Обычная" };
+        }
+
+        function updateScore() {
+            document.getElementById("score").textContent = `Очки: ${score}`;
+        }
+
+        function saveData() {
+            localStorage.setItem("score", score);
+            localStorage.setItem("photos", JSON.stringify(savedPhotos));
+        }
+
+        function loadData() {
+            score = parseInt(localStorage.getItem("score")) || 0;
+            savedPhotos = JSON.parse(localStorage.getItem("photos")) || [];
+            updateScore();
+            updateGallery();
+        }
+
+        function updateGallery() {
+            let gallery = document.getElementById("gallery");
+            gallery.innerHTML = "";
+            savedPhotos.forEach(photo => {
+                let container = document.createElement("div");
+                container.classList.add("photo-container");
+
+                let img = document.createElement("img");
+                img.src = photo.src;
+                img.onclick = () => openFullscreen(photo.src);
+
+                let rarityLabel = document.createElement("div");
+                rarityLabel.classList.add("rarity-label");
+                rarityLabel.textContent = `${photo.rarity}: ${photo.name}`;
+
+                container.appendChild(img);
+                container.appendChild(rarityLabel);
+                gallery.appendChild(container);
+            });
+        }
+
+        function openFullscreen(src) {
+            let fullscreenContainer = document.getElementById("fullscreen-container");
+            let fullscreenImg = document.getElementById("fullscreen-img");
+            fullscreenImg.src = src;
+            fullscreenContainer.style.display = "flex";
+        }
+
+        function closeFullscreen() {
+            document.getElementById("fullscreen-container").style.display = "none";
+        }
 
         document.getElementById("clickButton").addEventListener("click", function() {
-            score += clickPower;
+            score += 1;
             updateScore();
+            saveData();
         });
-
-        document.getElementById("upgradeButton").addEventListener("click", function() {
-            if (score >= 50) {
-                score -= 50;
-                clickPower += 1;
-                updateScore();
-                saveData();
-            } else {
-                alert("Недостаточно очков!");
-            }
-        });
-
-        document.getElementById("workerButton").addEventListener("click", function() {
-            if (score >= 100) {
-                score -= 100;
-                workers += 1;
-                updateScore();
-                saveData();
-            } else {
-                alert("Недостаточно очков!");
-            }
-        });
-
-        setInterval(() => {
-            if (workers > 0) {
-                score += workers;
-                updateScore();
-                saveData();
-            }
-        }, 1000);
 
         document.getElementById("buyPhoto").addEventListener("click", function() {
             if (score >= 200) {
                 score -= 200;
-                let imgSrc = photoUrls[Math.floor(Math.random() * photoUrls.length)];
-                savedPhotos.push(imgSrc);
+                let photo = getRandomCharacter();
+                savedPhotos.push(photo);
                 updateGallery();
                 updateScore();
                 saveData();
@@ -132,38 +180,8 @@
             }
         });
 
-        function updateScore() {
-            document.getElementById("score").textContent = "Очки: " + score;
-        }
-
-        function updateGallery() {
-            let gallery = document.getElementById("gallery");
-            gallery.innerHTML = "";
-            savedPhotos.forEach(src => {
-                let img = document.createElement("img");
-                img.src = src;
-                img.onclick = () => openFullscreen(src);
-                gallery.appendChild(img);
-            });
-        }
-
-        function openFullscreen(src) {
-            document.getElementById("fullImage").src = src;
-            document.getElementById("fullscreenImage").style.display = "flex";
-        }
-
-        function closeFullscreen() {
-            document.getElementById("fullscreenImage").style.display = "none";
-        }
-
-        function saveData() {
-            localStorage.setItem("score", score);
-            localStorage.setItem("clickPower", clickPower);
-            localStorage.setItem("workers", workers);
-            localStorage.setItem("photos", JSON.stringify(savedPhotos));
-        }
-
-        updateGallery();
+        window.onload = loadData;
     </script>
+
 </body>
 </html>
